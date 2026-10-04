@@ -39,6 +39,6 @@ Upload this repository to GitHub, then deploy `app.py` through Streamlit Communi
 
 ## Author
 **Hubert Gogola**  
-Data Analyst in football  
+Football Data Scientist  
 Bachelor graduate, Computer Science and Econometrics, AGH University of Krakow  
 Continuing with MSc studies in Computer Science and Econometrics at AGH
