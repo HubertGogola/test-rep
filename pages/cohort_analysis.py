@@ -68,9 +68,13 @@ theme.apply_plot_theme(fig_corr, height=430)
 st.plotly_chart(fig_corr, use_container_width=True)
 components.note(
     "In the thesis's own motor dataset, HSR and sprint distance were the most strongly correlated "
-    "pair, and PII was close to independent of raw total distance. Look for the same qualitative "
-    "pattern here \u2014 the exact coefficients will differ because this is an independent "
-    "synthetic dataset."
+    "pair \u2014 look for the same pattern here. PII's correlation with raw total distance is not "
+    "directly comparable between the two datasets: the formula places distance in the denominator, "
+    "so some negative association is expected by construction, and how strongly that shows up "
+    "empirically depends on how correlated distance happens to be with the formula's numerator "
+    "terms in a given dataset. The thesis's cohort showed a very weak overall relationship "
+    "(correlation \u22480.07); this independent synthetic cohort is not expected to reproduce that "
+    "exact figure."
 )
 
 st.write("")

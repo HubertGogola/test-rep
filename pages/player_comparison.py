@@ -27,21 +27,40 @@ players = sorted(df.player_id.unique())
 c1, c2, c3 = st.columns([1, 1, 1])
 with c1:
     player_a = st.selectbox("Player A", players, index=0)
-with c2:
-    default_b_idx = 1 if len(players) > 1 else 0
-    player_b = st.selectbox("Player B", players, index=default_b_idx)
 with c3:
     restrict_role = st.checkbox("Only compare within the same broad role", value=True)
 
 role_a = df[df.player_id == player_a].role.iloc[0]
-role_b = df[df.player_id == player_b].role.iloc[0]
-if restrict_role and role_a != role_b:
-    st.warning(
-        f"{player_a} ({role_a}) and {player_b} ({role_b}) play different broad roles. "
-        "Uncheck the restriction above to compare them anyway, or pick two players sharing a role "
-        "for a more like-for-like comparison, consistent with the thesis's own similarity approach."
+# Build Player B's options BEFORE rendering the widget, so an incompatible
+# pairing can never actually be selected in the first place -- rather than
+# letting the person pick one and then rejecting it with a warning.
+if restrict_role:
+    candidates_b = [p for p in players if p != player_a and df[df.player_id == p].role.iloc[0] == role_a]
+else:
+    candidates_b = [p for p in players if p != player_a]
+
+with c2:
+    if candidates_b:
+        player_b = st.selectbox("Player B", candidates_b, index=0)
+        st.caption(f"Showing players in role: {role_a}" if restrict_role else "Showing all other players, any role.")
+    else:
+        st.selectbox("Player B", ["(no comparable players)"], disabled=True)
+        player_b = None
+
+if player_b is None:
+    st.info(
+        f"No other player shares {player_a}'s role ({role_a}) in this synthetic cohort. "
+        "Uncheck the restriction above to compare across roles."
     )
     st.stop()
+
+role_b = df[df.player_id == player_b].role.iloc[0]
+if not restrict_role and role_a != role_b:
+    st.caption(
+        f"{player_a} ({role_a}) and {player_b} ({role_b}) play different broad roles \u2014 percentiles "
+        "below are each computed within the player's own role group, so a given percentile does not mean "
+        "the same absolute level across the two."
+    )
 
 pa = df[df.player_id == player_a].sort_values("appearance_no")
 pb = df[df.player_id == player_b].sort_values("appearance_no")
