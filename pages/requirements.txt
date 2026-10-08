@@ -1,0 +1,9 @@
+# Pinned to specific, known-good versions rather than open-ended ">=" ranges,
+# so a fresh deployment installs the exact versions this application was
+# built and tested against. Safe to bump forward; re-test after doing so.
+streamlit==1.38.0
+pandas==2.2.2
+numpy==1.26.4
+scipy==1.13.1
+scikit-learn==1.5.0
+plotly==5.24.0
