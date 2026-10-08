@@ -129,17 +129,26 @@ constants.
 ## Project structure
 
 ```
-app.py                     Entry point: page config, global CSS, navigation router
-pages/                      One file per page (plain scripts, no page content in app.py)
+app.py                     Entry point: page config, global CSS, navigation router (6 top-level pages)
+pages/
+  overview.py               Landing page
+  player_dna.py             Individual fictional player profile (the "DNA fingerprint" centerpiece)
+  player_comparison.py      Player A vs. Player B, side by side
+  cohort_analysis.py        EDA: distributions, correlations, data completeness
+  modelling.py              Tabs: PCA Explorer | Clustering Lab | Dynamic Player DNA | HMM & States | Survival
+  reference.py              Tabs: Methodology | About & Research
+sections/                   The content behind each tab in modelling.py / reference.py, each a
+                             plain `render()` function (kept separate from pages/ so each tab's
+                             widget state and local variables stay fully independent)
 src/
-  thesis_results.py         Frozen thesis constants (never recomputed)
+  thesis_results.py         Frozen thesis constants (never recomputed, aggregate-only -- see Privacy)
   generate_data.py          Deterministic synthetic data generator
   data_pipeline.py          Pure analytical pipeline (PCA, K-means, GMM, HMM, similarity...)
   hmm_model.py               From-scratch Gaussian HMM (Baum-Welch EM, Viterbi)
   stats_utils.py             Bootstrap ARI, Benjamini-Hochberg FDR, Kaplan-Meier, Cramer's V
   cache.py                    Thin Streamlit caching layer around data_pipeline
   theme.py                    Design tokens, CSS injection, Plotly theme
-  components.py                Reusable Streamlit UI building blocks
+  components.py                Reusable Streamlit UI building blocks (incl. the DNA fingerprint chart)
 data/synthetic_player_data.csv  Generated synthetic dataset
 .streamlit/config.toml           Theme configuration
 tests/                            PII, standardisation, GMM/HMM, survival and privacy tests

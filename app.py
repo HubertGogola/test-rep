@@ -35,16 +35,9 @@ pages = {
         st.Page("pages/player_comparison.py", title="Player comparison"),
         st.Page("pages/cohort_analysis.py", title="Cohort analysis"),
     ],
-    "Modelling pipeline": [
-        st.Page("pages/pca_explorer.py", title="PCA explorer"),
-        st.Page("pages/clustering_lab.py", title="Clustering lab"),
-        st.Page("pages/dynamic_dna.py", title="Dynamic Player DNA"),
-        st.Page("pages/hmm_states.py", title="HMM & state transitions"),
-        st.Page("pages/survival_analysis.py", title="Survival analysis"),
-    ],
-    "Reference": [
-        st.Page("pages/methodology.py", title="Methodology"),
-        st.Page("pages/about_research.py", title="About & research"),
+    "Modelling & reference": [
+        st.Page("pages/modelling.py", title="Modelling"),
+        st.Page("pages/reference.py", title="Reference"),
     ],
 }
 
