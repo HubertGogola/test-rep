@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src import theme, components, data_pipeline as dp, thesis_results as T
+from src import comparison_options as comparison
 from src.cache import get_bundle
 
 bundle = get_bundle()
@@ -23,43 +24,74 @@ components.page_header(
     badges=["demo"],
 )
 
-players = sorted(df.player_id.unique())
-c1, c2, c3 = st.columns([1, 1, 1])
-with c1:
-    player_a = st.selectbox("Player A", players, index=0)
-with c3:
-    restrict_role = st.checkbox("Only compare within the same broad role", value=True)
-
-role_a = df[df.player_id == player_a].role.iloc[0]
-# Build Player B's options BEFORE rendering the widget, so an incompatible
-# pairing can never actually be selected in the first place -- rather than
-# letting the person pick one and then rejecting it with a warning.
-if restrict_role:
-    candidates_b = [p for p in players if p != player_a and df[df.player_id == p].role.iloc[0] == role_a]
-else:
-    candidates_b = [p for p in players if p != player_a]
-
-with c2:
-    if candidates_b:
-        player_b = st.selectbox("Player B", candidates_b, index=0)
-        st.caption(f"Showing players in role: {role_a}" if restrict_role else "Showing all other players, any role.")
-    else:
-        st.selectbox("Player B", ["(no comparable players)"], disabled=True)
-        player_b = None
-
-if player_b is None:
-    st.info(
-        f"No other player shares {player_a}'s role ({role_a}) in this synthetic cohort. "
-        "Uncheck the restriction above to compare across roles."
-    )
+# The selection flow goes from analytical context -> valid player pool -> pair.
+# Both dropdowns contain only comparable players; no unsupported pairing can
+# produce a warning after the user has already made their selections.
+roster = comparison.player_roster(df)
+roles = comparison.comparable_roles(roster)
+if not roles:
+    st.info("There are no comparable player pairs in this demo dataset.")
     st.stop()
 
-role_b = df[df.player_id == player_b].role.iloc[0]
-if not restrict_role and role_a != role_b:
+group_col, scope_col, squad_col = st.columns([1.05, 1.35, 1.05])
+with group_col:
+    selected_role = st.selectbox(
+        "Position group",
+        roles,
+        format_func=lambda role: comparison.ROLE_LABELS.get(role, role),
+    )
+with scope_col:
+    scope = st.selectbox(
+        "Comparison scope",
+        ["Same squad & role", "Same role, across squads"],
+        help="Same squad & role is the recommended like-for-like comparison.",
+    )
+
+same_squad = scope == "Same squad & role"
+with squad_col:
+    if same_squad:
+        squads = comparison.comparable_squads(roster, selected_role)
+        selected_squad = st.selectbox("Squad", squads)
+    else:
+        selected_squad = None
+        st.markdown("<div style='padding-top:1.95rem'></div>", unsafe_allow_html=True)
+        st.caption("All squads")
+
+eligible = comparison.candidate_players(roster, selected_role, selected_squad)
+if len(eligible) < 2:
+    st.info("No comparable pair is available for this reference group.")
+    st.stop()
+
+roster_labels = {
+    row.player_id: row.squad
+    for row in roster.itertuples(index=False)
+}
+player_cols = st.columns(2)
+with player_cols[0]:
+    player_a = st.selectbox(
+        "Player A",
+        eligible,
+        format_func=lambda player: f"{player}  ·  {roster_labels[player]}",
+        key=f"comparison_a_{selected_role}_{selected_squad}",
+    )
+with player_cols[1]:
+    player_b = st.selectbox(
+        "Player B",
+        comparison.second_player_choices(eligible, player_a),
+        format_func=lambda player: f"{player}  ·  {roster_labels[player]}",
+        key=f"comparison_b_{selected_role}_{selected_squad}_{player_a}",
+    )
+
+if same_squad:
     st.caption(
-        f"{player_a} ({role_a}) and {player_b} ({role_b}) play different broad roles \u2014 percentiles "
-        "below are each computed within the player's own role group, so a given percentile does not mean "
-        "the same absolute level across the two."
+        f"Like-for-like comparison · {comparison.ROLE_LABELS.get(selected_role, selected_role)} "
+        f"· {selected_squad} · both players share the same percentile reference group."
+    )
+else:
+    st.caption(
+        f"Same broad role · {comparison.ROLE_LABELS.get(selected_role, selected_role)}. "
+        "Percentiles are relative to each player's own squad-and-role reference group; "
+        "they do not represent identical absolute performance levels across squads."
     )
 
 pa = df[df.player_id == player_a].sort_values("appearance_no")
@@ -93,8 +125,8 @@ if not radar_a.empty and not radar_b.empty:
     )
     st.plotly_chart(fig, use_container_width=True)
 st.caption(
-    "Each player's percentile is computed within their own squad/role reference group, so this "
-    "overlay compares relative standing, not necessarily identical raw values."
+    "Percentiles describe each player's standing within their own squad-and-role reference group. "
+    "Compare absolute output in the trajectory chart below when needed."
 )
 
 st.write("")
